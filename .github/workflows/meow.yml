@@ -29,16 +29,10 @@ jobs:
         with:
           python-version: '3.13'
 
-      - name: Setup Java 25
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '25'
-
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install nightly toolchain and wasm target
+      - name: Install nightly and wasm target
         run: |
           rustup toolchain install nightly-2026-10-14 --profile minimal --component rust-src
           rustup target add wasm32-unknown-unknown
@@ -51,7 +45,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends binaryen
 
-      - name: Build browser bundle
+      - name: Build browser bundle in single-threaded mode for GitHub Pages
+        env:
+          THREADS: "0"
         run: ./web/build.sh
 
       - name: Upload Pages artifact
