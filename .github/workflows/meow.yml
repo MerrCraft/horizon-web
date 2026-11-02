@@ -1,5 +1,9 @@
 name: CI
 
+on:
+  push:
+  pull_request:
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -12,7 +16,7 @@ jobs:
         with:
           targets: wasm32-unknown-unknown
 
-      - name: Pin wasm-bindgen version in the project
+      - name: Pin wasm-bindgen version
         run: cargo update -p wasm-bindgen --precise 0.2.129
 
       - name: Install matching wasm-bindgen CLI
