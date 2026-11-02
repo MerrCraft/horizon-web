@@ -1,70 +1,22 @@
-name: Deploy Horizon web to GitHub Pages
-
-on:
-  push:
-    branches: [web]
-  workflow_dispatch:
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages-${{ github.ref }}
-  cancel-in-progress: true
+name: CI
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
-
-      - name: Setup Python 3.13
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-
-      - name: Install Rust stable
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install nightly and wasm target
+      - name: Install Rust toolchain
         run: |
-          rustup toolchain install nightly-2026-10-14 --profile minimal --component rust-src
+          rustup toolchain install stable
           rustup target add wasm32-unknown-unknown
 
       - name: Install wasm-bindgen CLI
-        run: cargo install wasm-bindgen-cli --version 0.2.100 --locked
+        run: cargo install --locked --version 0.2.129 wasm-bindgen-cli
 
-      - name: Install binaryen
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends binaryen
+      - name: Build Wasm
+        run: cargo build --target wasm32-unknown-unknown
 
-      - name: Build browser bundle in single-threaded mode for GitHub Pages
-        env:
-          THREADS: "0"
-        run: ./web/build.sh
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./web/dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Generate bindings
+        run: wasm-bindgen target/wasm32-unknown-unknown/debug/*.wasm --out-dir ./pkg --web
