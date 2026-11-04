@@ -1,44 +1,17 @@
-name: Build and deploy to GitHub Pages
+      - name: Install Rust toolchains and Wasm targets
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup target add wasm32-unknown-unknown --toolchain stable
+          rustup toolchain install nightly-2026-10-14 --profile minimal --component rust-src
+          rustup target add wasm32-unknown-unknown --toolchain nightly-2026-10-14
 
-on:
-  push:
-    branches: [main]
-  workflow_dispatch:
+      - name: Install matching wasm-bindgen CLI
+        run: cargo install --locked --version 0.2.129 wasm-bindgen-cli
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
+      - name: Build Pages site
+        run: python3 web/package.py folder
 
-concurrency:
-  group: pages
-  cancel-in-progress: true
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Build site
-        run: bash web/build.sh
-
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload site
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: web
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          path: web/out/horizon-web
