@@ -11,43 +11,26 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages"
+  group: pages
   cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: wasm32-unknown-unknown
+      - name: Build site
+        run: bash web/build.sh
 
-      - name: Pin wasm-bindgen version
-        run: cargo update -p wasm-bindgen --precise 0.2.129
-
-      - name: Install matching wasm-bindgen CLI
-        run: cargo install --locked --version 0.2.129 wasm-bindgen-cli
-
-      - name: Build Wasm
-        run: cargo build --target wasm32-unknown-unknown
-
-      - name: Generate bindings
-        run: |
-          wasm-bindgen --version
-          wasm-bindgen target/wasm32-unknown-unknown/debug/*.wasm --out-dir ./pkg --web
-
-      - name: Setup Pages
+      - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
-      - name: Upload Pages artifact
+      - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./pkg
+          path: web
 
   deploy:
     needs: build
@@ -55,7 +38,6 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
